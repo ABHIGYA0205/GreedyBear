@@ -256,9 +256,9 @@ describe("Feeds component", () => {
       await user.selectOptions(feedTypeSelect, ["cowrie", "honeytrap"]);
 
       await waitFor(() => {
-        const calls = useAxiosMock.mock.calls;
-        const lastParams = calls[calls.length - 1][0].params;
-        const feedTypes = `${lastParams.feed_type}`.split(",");
+        const { calls } = useAxiosMock.mock;
+        const [requestConfig] = calls[calls.length - 1];
+        const feedTypes = `${requestConfig.params.feed_type}`.split(",");
 
         expect(feedTypes).toContain("cowrie");
         expect(feedTypes).toContain("honeytrap");
