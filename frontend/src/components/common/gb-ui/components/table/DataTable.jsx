@@ -324,9 +324,11 @@ function DataTable({
     [pageRows, toLegacyRow],
   );
 
+  const rowSelection = table.state.rowSelection;
   const selectedFlatRows = React.useMemo(
     () => table.getSelectedRowModel().flatRows.map((row) => toLegacyRow(row)),
-    [table, toLegacyRow],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rowSelection, data, toLegacyRow],
   );
 
   React.useEffect(() => {
@@ -439,9 +441,10 @@ function DataTable({
     [hookRegistry],
   );
 
+  const totalPages = table.getPageCount();
   const pageOptions = React.useMemo(
-    () => Array.from({ length: table.getPageCount() }, (_, index) => index),
-    [table],
+    () => Array.from({ length: totalPages }, (_, index) => index),
+    [totalPages],
   );
 
   const tableBody = TableBodyComponent ? (
