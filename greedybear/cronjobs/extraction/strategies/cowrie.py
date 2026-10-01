@@ -302,7 +302,8 @@ class CowrieExtractionStrategy(BaseExtractionStrategy):
             session.commands.commands_hash = commands_hash
             return False
 
-        last_seen = session.commands.last_seen
+        cmd_seq.last_seen = max(cmd_seq.last_seen, session.commands.last_seen)
+        cmd_seq.first_seen = min(cmd_seq.first_seen, session.commands.first_seen)
+
         session.commands = cmd_seq
-        session.commands.last_seen = last_seen
         return True
