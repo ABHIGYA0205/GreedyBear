@@ -66,6 +66,20 @@ class StatisticsViewTestCase(CustomTestCase):
         self.assertEqual(response.json()[0]["Cowrie"], 3)
         self.assertEqual(response.json()[0]["Tanner"], 0)
 
+    def test_feed_types_reserves_date_for_the_time_bucket(self):
+        reserved_honeypot = Honeypot.objects.create(name="date", active=True)
+        ioc = IOC.objects.create(name="198.51.100.252", type=IocType.IP.value)
+        ioc.honeypots.add(reserved_honeypot)
+        Cache(API_CACHE_ALIAS).bump_data_version(IOC_DATA_VERSION_KEY)
+
+        response = self.client.get("/api/statistics/feeds_types")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data)
+        self.assertTrue(all(isinstance(item["date"], str) for item in data))
+        self.assertFalse(any(key.startswith("feed_type_count_") for key in data[0]))
+
     def test_200_countries(self):
         response = self.client.get("/api/statistics/countries")
         self.assertEqual(response.status_code, 200)

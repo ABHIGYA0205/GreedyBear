@@ -12,6 +12,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from api.mixins import CachedResponseMixin
+from greedybear.consts import FEED_TYPES_RESERVED_HONEYPOT_NAMES
 from greedybear.models import IOC, Honeypot, Statistics, ViewType
 
 logger = logging.getLogger(__name__)
@@ -137,13 +138,21 @@ class StatisticsViewSet(CachedResponseMixin, viewsets.ViewSet):
         if cached_response is not None:
             return cached_response
 
-        # Build annotations for each active general honeypot
+        # Build annotations for active honeypots using internal aliases; names
+        # from external sensors must never become ORM annotation names.
         annotations = {}
-        honeypots = Honeypot.objects.all().filter(active=True)
-        for hp in honeypots:
-            # Use M2M relationship instead of boolean fields
-            annotations[hp.name] = Count("name", distinct=True, filter=Q(honeypots__name__iexact=hp.name))
-        return self.__aggregation_response_static_ioc(annotations)
+        response_names = {}
+        honeypots = Honeypot.objects.filter(active=True)
+        for index, hp in enumerate(honeypots):
+            # ``date`` is reserved for the response's time-bucket field. Ignore
+            # legacy rows using that name, since the API cannot represent both.
+            if hp.name.casefold() in FEED_TYPES_RESERVED_HONEYPOT_NAMES:
+                continue
+
+            alias = f"feed_type_count_{index}"
+            annotations[alias] = Count("name", distinct=True, filter=Q(honeypots__name__iexact=hp.name))
+            response_names[alias] = hp.name
+        return self.__aggregation_response_static_ioc(annotations, response_names)
 
     def __aggregation_response_static_statistics(self, annotations: dict) -> Response:
         """
@@ -159,12 +168,13 @@ class StatisticsViewSet(CachedResponseMixin, viewsets.ViewSet):
         qs = Statistics.objects.filter(request_date__gte=delta).annotate(date=Trunc("request_date", basis)).values("date").annotate(**annotations)
         return Response(qs)
 
-    def __aggregation_response_static_ioc(self, annotations: dict) -> Response:
+    def __aggregation_response_static_ioc(self, annotations: dict, response_names: dict[str, str]) -> Response:
         """
         Helper method to generate IOC response based on annotations.
 
         Args:
-            annotations (dict): Dictionary containing the annotations for the query.
+            annotations: IOC aggregation expressions keyed by internal alias.
+            response_names: Maps internal aliases to public honeypot-name keys.
 
         Returns:
             Response: A JSON response containing the aggregated IOC data.
@@ -178,7 +188,12 @@ class StatisticsViewSet(CachedResponseMixin, viewsets.ViewSet):
             .values("date")
             .annotate(**annotations)
         )
-        return Response(qs)
+        data = []
+        for item in qs:
+            row = {"date": item["date"]}
+            row.update({name: item[alias] for alias, name in response_names.items()})
+            data.append(row)
+        return Response(data)
 
     @staticmethod
     def __parse_range(request):

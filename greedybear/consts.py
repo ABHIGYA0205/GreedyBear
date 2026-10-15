@@ -95,6 +95,10 @@ START_TIME = time.time()
 SHARE_TOKEN_SALT = "greedybear-feeds"
 SHARE_TOKEN_MAX_AGE = 86400 * 30  # 30 days
 
+# Feed-type statistics API: ``date`` is the time-bucket key, so it cannot
+# also be represented as a honeypot series name.
+FEED_TYPES_RESERVED_HONEYPOT_NAMES = frozenset({"date"})
+
 # Event injection API
 APISOURCE_LOCKED_THRESHOLD = 10
 
