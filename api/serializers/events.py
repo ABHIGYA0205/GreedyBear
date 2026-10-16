@@ -4,7 +4,6 @@ import re
 from django.utils import timezone
 from rest_framework import serializers
 
-from greedybear.consts import FEED_TYPES_RESERVED_HONEYPOT_NAMES
 from greedybear.models import EventStatus, Sensor
 from greedybear.utils import is_ip_address
 
@@ -193,11 +192,6 @@ class SensorCreateSerializer(serializers.ModelSerializer):
         }
 
         read_only_fields = ["id"]
-
-    def validate_honeypot_software(self, value):
-        if value.casefold() in FEED_TYPES_RESERVED_HONEYPOT_NAMES:
-            raise serializers.ValidationError(f"Honeypot software name '{value}' is reserved for the feed-type statistics time bucket.")
-        return value
 
     def validate_country_code(self, value):
         """

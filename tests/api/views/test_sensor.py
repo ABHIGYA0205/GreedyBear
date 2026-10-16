@@ -345,7 +345,7 @@ class SensorValidationTests(BaseSensorTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_reserved_honeypot_software_name_returns_400(self):
+    def test_honeypot_software_named_date_is_accepted(self):
         payload = {
             **VALID_PAYLOAD,
             "honeypot_software": "date",
@@ -357,8 +357,7 @@ class SensorValidationTests(BaseSensorTestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("honeypot_software", response.json()["errors"])
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_missing_address_returns_400(self):
         payload = {k: v for k, v in VALID_PAYLOAD.items() if k != "address"}
