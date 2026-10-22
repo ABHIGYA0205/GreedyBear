@@ -97,19 +97,31 @@ def parse_timestamp(timestamp: str) -> datetime:
 
 def is_valid_cidr(candidate: str) -> tuple[bool, str | None]:
     """
-    Validate if a string is a valid CIDR notation.
+    Validate if a string is a CIDR notation the cidr column can store.
+
+    A value with host bits set, like 1.2.3.5/24, is rejected: the column
+    stores networks, not hosts inside them.
 
     Args:
         candidate: String to validate as CIDR.
 
     Returns:
-        True if valid CIDR, False otherwise.
+        Tuple of (is_valid, cleaned_cidr). If valid, cleaned_cidr is the
+        stripped value; otherwise, it is None.
     """
+    candidate = candidate.strip()
     try:
-        IPv4Network(candidate.strip(), strict=False)
-        return True, candidate.strip()
+        IPv4Network(candidate, strict=True)
     except ValueError:
         return False, None
+
+    # Python accepts a netmask after the slash, like 1.2.3.0/255.255.255.0.
+    # The cidr column only accepts a prefix length, so that form is rejected
+    # here too. strict=True above covers the other mismatch, host bits.
+    if "/" in candidate and not candidate.split("/", 1)[1].isdigit():
+        return False, None
+
+    return True, candidate
 
 
 def is_valid_ipv4(candidate: str) -> tuple[bool, str | None]:
