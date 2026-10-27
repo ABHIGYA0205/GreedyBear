@@ -29,8 +29,7 @@ class StatisticsViewSet(CachedResponseMixin, viewsets.ViewSet):
     # Only cache statistics derived from IOC data that is refreshed by the extraction.
     # These actions can use extraction-driven invalidation; user/request-dependent statistics
     # should stay uncached here so they reflect the latest per-user state.
-    # v2 invalidates cached flat feed-type payloads after the nested-count response change.
-    cache_namespace = "statistics_ioc_v2"
+    cache_namespace = "statistics_ioc"
     cacheable_actions = frozenset({"countries", "feeds_types"})
 
     def _cache_enabled(self) -> bool:
