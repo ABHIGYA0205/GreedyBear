@@ -68,7 +68,7 @@ class CachedResponseMixin:
         self.cache.set(
             self.cache_key,
             {
-                "content": response.rendered_content,
+                "content": response.content,
                 "content_type": response["content-type"],
                 "status": response.status_code,
             },
