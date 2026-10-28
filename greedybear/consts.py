@@ -11,6 +11,9 @@ POST = "POST"
 DOMAIN = "domain"
 IP = "ip"
 
+# maximum length of a fully qualified domain name
+MAX_HOSTNAME_LENGTH = 253
+
 FIELDS_TO_EXTRACT = [
     "@timestamp",
     "alert",
