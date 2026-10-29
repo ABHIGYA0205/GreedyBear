@@ -3,6 +3,7 @@
 import hashlib
 import json
 from datetime import timedelta
+from typing import cast
 
 from certego_saas.apps.auth.backend import CookieTokenAuthentication
 from certego_saas.ext.pagination import CustomPageNumberPagination
@@ -524,7 +525,9 @@ class ShareTokenViewSet(RequestLoggingMixin, QueryParamValidationMixin, ViewSet)
         # so the token format and consume-time replay stay unchanged.
         data = request.query_params.dict()
         data.pop("reason", None)
-        token = signing.dumps(data, salt=share_token_salt_for_user(request.user.pk))
+        # IsAuthenticated guarantees request.user is a persisted user.
+        user_id = cast("int", request.user.pk)
+        token = signing.dumps(data, salt=share_token_salt_for_user(user_id))
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         ShareToken.objects.get_or_create(
             token_hash=token_hash,

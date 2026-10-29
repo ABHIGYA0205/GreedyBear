@@ -1,6 +1,7 @@
 import hashlib
 import logging
 from collections.abc import Mapping
+from typing import cast
 
 from django.conf import settings
 from django.core import signing
@@ -304,10 +305,12 @@ class TokenRequestSerializer(serializers.Serializer):
         except ShareToken.DoesNotExist as exc:
             raise serializers.ValidationError("Invalid or expired token") from exc
         share_token = attrs["share_token"]
+        # Use the FK attname to avoid fetching the related user.
+        owner_id = cast("int", share_token.user_id)  # ty: ignore[unresolved-attribute]  # Django generates this FK attribute
         try:
             attrs["feed_params"] = signing.loads(
                 token,
-                salt=share_token_salt_for_user(share_token.user_id),
+                salt=share_token_salt_for_user(owner_id),
                 max_age=SHARE_TOKEN_MAX_AGE,
             )
         except signing.BadSignature as exc:
